@@ -13,5 +13,5 @@ An AI voice-based website that will help you build your PC
 - Windows
 - Fedora
 
-# Disclaimer
+## Disclaimer
 The first 3 releases were made before the repo was created. That is the reason why the releases have very short time gaps.
