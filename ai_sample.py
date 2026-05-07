@@ -9,11 +9,6 @@
 # then copy your API key
 # paste it in the api_key=
 
-'''
-    To install Pyaudio in Linux di
-'''
-
-
 import google.generativeai as genai
 import speech_recognition as sr
 import os
