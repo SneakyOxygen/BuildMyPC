@@ -2,7 +2,7 @@
 
 An AI voice-based website that will help you build your PC
 
-#Features:
+# Features:
 - Voice-based interaction
 - PC parts lister
 - Benchmark my PC
