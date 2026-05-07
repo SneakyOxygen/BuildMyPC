@@ -8,4 +8,6 @@ An AI voice-based website that will help you build your PC
 - Benchmark my PC
 - What to upgrade?
 - Suggested phrases per chat
-  
+
+# Tested Environments:
+- Windows 
