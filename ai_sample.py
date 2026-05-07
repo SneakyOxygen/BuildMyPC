@@ -1,13 +1,46 @@
 # do this pip install --upgrade google-generativeai
 # and this pip install google.generativeai
 # and this pip install SpeechRecognition
-# and this pip install pipwin
+# and this pip install pipwin ONLY for Windows systems
 # then this pip install pyaudio
 # and this pip install pyttsx3 (text to speech)
+
 # next, go to aistudio.google.com
 # find "Get API key" located at the bottom left
 # then copy your API key
 # paste it in the api_key=
+
+'''
+    To install Pyaudio in Linux distributions, 
+    one must open the terminal and enter hecker mode. 
+    Install these dependencies for pip install pyaudio to work.
+    It is recommended to use a native package of VS Code for this but 
+    FlatSeal may help for the Flatpak version to work.
+    
+    Ubuntu / Debian / Mint
+        sudo apt update
+
+        sudo apt install -y \
+        python3-pip \
+        python3-venv \
+        portaudio19-dev \
+        python3-dev \
+        ffmpeg
+        
+    Fedora
+        sudo dnf install -y \
+        python3-pip \
+        python3-devel \
+        portaudio-devel \
+        ffmpeg
+    
+    Arch Linux
+        sudo pacman -S \
+        python-pip \
+        portaudio \
+        ffmpeg
+'''
+
 
 import google.generativeai as genai
 import speech_recognition as sr
