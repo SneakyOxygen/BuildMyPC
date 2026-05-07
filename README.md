@@ -10,4 +10,5 @@ An AI voice-based website that will help you build your PC
 - Suggested phrases per chat
 
 # Tested Environments:
-- Windows 
+- Windows
+- Fedora
