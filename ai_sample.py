@@ -49,68 +49,93 @@ import os
 # Configure your API Key
 genai.configure(api_key="API")
 
-# Initialize the model and chat
-model = genai.GenerativeModel("gemini-2.5-flash")
+# Define Nova's specific persona and rules
+nova_persona = """
+You are Nova, an expert PC building assistant and hardware technician. 
+Your primary goal is to help users design custom PCs, check part compatibility, suggest budget-friendly upgrades, and troubleshoot hardware issues. 
+You should be enthusiastic, knowledgeable, and provide easy-to-understand explanations for both beginners and experts.
+If a user asks a question that is NOT related to PC building, computers, or gaming hardware, you must politely decline to answer and steer the conversation back to PC building.
+"""
+
+# Initialize the model with the system instruction
+model = genai.GenerativeModel(
+    "gemini-2.5-flash",
+    system_instruction=nova_persona
+)
+
+# Start the chat
 chat = model.start_chat(history=[])
 
 # Initialize the speech recognizer
 recognizer = sr.Recognizer()
-recognizer.pause_threshold = 3.0
+# A shorter pause threshold makes the "bursts" process faster
+recognizer.pause_threshold = 0.8 
 
-def listen_to_mic():
-    """Turns on the mic, listens until you stop speaking, and returns the text."""
-    with sr.Microphone() as source:
-        print("\n🎤 [Mic is ON] Listening... (speak now)")
-        
-        # Adjust for ambient background noise to improve accuracy
-        recognizer.adjust_for_ambient_noise(source, duration=0.5)
-        
-        try:
-            # Listens until it detects a pause in your speech
-            audio = recognizer.listen(source, timeout=5, phrase_time_limit=15)
-            print("🛑 [Mic is OFF] Processing your speech...")
-            
-            # Send the audio to Google's free speech-to-text service
-            text = recognizer.recognize_google(audio)
-            return text
-            
-        except sr.WaitTimeoutError:
-            # Triggered if you don't say anything
-            return None
-        except sr.UnknownValueError:
-            print("[!] Sorry, I couldn't understand the audio.")
-            return None
-        except sr.RequestError as e:
-            print(f"[!] Could not request results; {e}")
-            return None
+# Calibrate background noise once at startup
+print("Calibrating microphone...")
+with sr.Microphone() as source:
+    recognizer.adjust_for_ambient_noise(source, duration=1)
+
+def listen_for_chunk(source):
+    """Listens for a quick burst of speech without spamming the console."""
+    try:
+        audio = recognizer.listen(source, timeout=2, phrase_time_limit=15)
+        return recognizer.recognize_google(audio)
+    except sr.WaitTimeoutError:
+        return None  # You are just pausing/thinking
+    except sr.UnknownValueError:
+        return None  # It heard a noise but no words
+    except sr.RequestError:
+        return None
 
 def chat_with_gemini(user_input):
     response = chat.send_message(user_input)
     return response.text
 
-print("HI, I'M NOVA! (Voice Mode Activated)\n")
-print("Just say 'quit', 'exit', or 'bye' to stop.")
+print("\nHI, I'M NOVA! (Voice Mode Activated)")
+print("Say 'Speech Done' or 'Thank You' to send your message to Nova.")
+print("Say 'Quit' or 'Exit' to stop the program.\n")
+
+trigger_phrases = ["speech done", "thank you"]
 
 while True:
-    # 1. Turn on mic and wait for user to speak
-    user_input = listen_to_mic()
+    print("🎤 [Mic is ON] Start speaking...")
+    full_user_input = ""
     
-    # If the mic didn't catch anything, restart the loop and listen again
-    if not user_input:
-        continue
-        
-    print(f"You said: \"{user_input}\"")
+    # Keep the microphone open continuously while building the sentence
+    with sr.Microphone() as source:
+        while True:
+            chunk = listen_for_chunk(source)
+            
+            if chunk:
+                print(f" > {chunk}")
+                full_user_input += chunk + " "
+                
+                # The trigger word to break the loop and send to AI
+                if any(trigger in chunk.lower() for trigger in trigger_phrases):
+                    break
+
+    final_prompt = full_user_input.lower()
     
-    # 2. Check for exit commands
-    if user_input.lower() in ["quit", "exit", "bye", "goodbye"]:
+    # Remove trigger phrases from final message
+    for trigger in ["speech done", "thank you"]:
+        final_prompt = final_prompt.replace(trigger, "")
+
+    final_prompt = final_prompt.strip()
+    
+    # Check for exit commands
+    if final_prompt in ["quit", "exit", "bye", "goodbye"]:
         print("Chatbot Nova: Goodbye!")
         break
         
-    # 3. Send to Gemini (Mic is currently OFF)
+    # Ignore accidental empty prompts
+    if not final_prompt or len(final_prompt) < 2:
+        continue
+        
+    # Send to Gemini
     try:
-        print("🤖 Chatbot Nova is thinking...")
-        ai_response = chat_with_gemini(user_input)
-        print(f"Chatbot Nova: {ai_response}")
-        # Loop restarts, mic turns back ON
+        print("\n🛑 [Mic is OFF] 🤖 Chatbot Nova is thinking...")
+        ai_response = chat_with_gemini(final_prompt)
+        print(f"Chatbot Nova: {ai_response}\n")
     except Exception as e:
         print(f"\n[!] An error occurred: {e}\n")
