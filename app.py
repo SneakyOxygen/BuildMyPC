@@ -145,6 +145,6 @@ def chat_endpoint_2():
 
 if __name__ == '__main__':
     # Dynamically pick up the port Railway assigns or default to 5050 locally
-    port = int(os.environ.get("PORT", 5050))
+    port = int(os.environ.get("PORT", 8080))
     # '0.0.0.0' opens up the application to accept public deployment traffic
     app.run(host='0.0.0.0', port=port)
