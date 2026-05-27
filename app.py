@@ -144,4 +144,7 @@ def chat_endpoint_2():
         return jsonify({"error": str(e)}), 500
 
 if __name__ == '__main__':
-    app.run(host='127.0.0.1', port=5050, debug=True)    
+    # Dynamically pick up the port Railway assigns or default to 5050 locally
+    port = int(os.environ.get("PORT", 5050))
+    # '0.0.0.0' opens up the application to accept public deployment traffic
+    app.run(host='0.0.0.0', port=port)
