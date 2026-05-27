@@ -120,7 +120,7 @@ model = genai.GenerativeModel(
 chat = model.start_chat(history=[])
 
 @app.route('/api/chat', methods=['POST'])
-def chat_endpoint():
+def chat_endpoint_2():
     data = request.json
     user_input = data.get('message')
     
