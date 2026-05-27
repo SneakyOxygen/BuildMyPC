@@ -49,21 +49,21 @@ import os
 # Configure your API Key
 genai.configure(api_key="API")
 
-# Define Nova's specific persona and rules
-nova_persona = """
-You are Nova, an expert PC building assistant and hardware technician. 
+# 1. Define Ramsey's specific persona and rules
+ramsey_persona = """
+You are Ramsey, an expert PC building assistant and hardware technician. 
 Your primary goal is to help users design custom PCs, check part compatibility, suggest budget-friendly upgrades, and troubleshoot hardware issues. 
 You should be enthusiastic, knowledgeable, and provide easy-to-understand explanations for both beginners and experts.
 If a user asks a question that is NOT related to PC building, computers, or gaming hardware, you must politely decline to answer and steer the conversation back to PC building.
 """
 
-# Initialize the model with the system instruction
+# 2. Initialize the model with the system instruction
 model = genai.GenerativeModel(
     "gemini-2.5-flash",
-    system_instruction=nova_persona
+    system_instruction=ramsey_persona
 )
 
-# Start the chat
+# 3. Start the chat
 chat = model.start_chat(history=[])
 
 # Initialize the speech recognizer
@@ -92,8 +92,8 @@ def chat_with_gemini(user_input):
     response = chat.send_message(user_input)
     return response.text
 
-print("\nHI, I'M NOVA! (Voice Mode Activated)")
-print("Say 'Speech Done' or 'Thank You' to send your message to Nova.")
+print("\nHI, I'M RAMSEY! (Voice Mode Activated)")
+print("Say 'Speech Done' to send your message to Ramsey.")
 print("Say 'Quit' or 'Exit' to stop the program.\n")
 
 trigger_phrases = ["speech done", "thank you"]
@@ -125,7 +125,7 @@ while True:
     
     # Check for exit commands
     if final_prompt in ["quit", "exit", "bye", "goodbye"]:
-        print("Chatbot Nova: Goodbye!")
+        print("Chatbot Ramsey: Goodbye!")
         break
         
     # Ignore accidental empty prompts
@@ -134,8 +134,8 @@ while True:
         
     # Send to Gemini
     try:
-        print("\n🛑 [Mic is OFF] 🤖 Chatbot Nova is thinking...")
+        print("\n🛑 [Mic is OFF] 🤖 Chatbot Ramsey is thinking...")
         ai_response = chat_with_gemini(final_prompt)
-        print(f"Chatbot Nova: {ai_response}\n")
+        print(f"Chatbot Ramsey: {ai_response}\n")
     except Exception as e:
         print(f"\n[!] An error occurred: {e}\n")
