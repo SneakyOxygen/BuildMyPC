@@ -11,7 +11,6 @@
 <body style="background-color: #0c0f2c; font-family: Inter, system-ui, sans-serif;">
     <div class="app-shell">
 
-        <!--Chat history-->
         <main class="workbench">
             <section class="panel" data-od-id="saved-chat-history" aria-labelledby="history-title">
                 <div class="panel-head">
@@ -38,51 +37,35 @@
                 </div>
             </section>
 
-            <!--Chat section-->
             <section class="panel chat-panel" data-od-id="ai-chat-builder" aria-labelledby="chat-title">
                 <div class="chat-head">
                     <h1 id="chat-title">Welcome! How can I assist you?</h1>
                 </div>
 
-                <div class="messages" id="messages" aria-live="polite">
+                <div class="messages" id="messages" aria-live="polite"></div>
 
-                </div>
-
-                <!--Suggested prompts-->
                 <div class="composer" data-od-id="prompt-area">
                     <div class="chip-row" aria-label="Suggested prompts">
-                        <button class="chip is-selected"
-                            data-prompt="Build me a PHP 65k 1440p gaming PC using local store availability.">Budget
-                            gaming PC</button>
-                        <button class="chip"
-                            data-prompt="Upgrade my current PC for better gaming performance without replacing everything.">Upgrade
-                            my current PC</button>
-                        <button class="chip"
-                            data-prompt="Compare two PC builds for gaming, streaming, and video editing workloads.">Benchmark
-                            two builds</button>
-                        <button class="chip"
-                            data-prompt="Build a quiet PC for Premiere Pro, DaVinci Resolve, and casual gaming.">Video
-                            editing PC</button>
+                        <button class="chip is-selected" data-prompt="Build me a PHP 65k 1440p gaming PC using local store availability.">Budget gaming PC</button>
+                        <button class="chip" data-prompt="Upgrade my current PC for better gaming performance without replacing everything.">Upgrade my current PC</button>
+                        <button class="chip" data-prompt="Compare two PC builds for gaming, streaming, and video editing workloads.">Benchmark two builds</button>
+                        <button class="chip" data-prompt="Build a quiet PC for Premiere Pro, DaVinci Resolve, and casual gaming.">Video editing PC</button>
                     </div>
                     <div class="phrase-row" aria-label="Suggested phrases for this chat" id="phraseRow">
                         <button class="phrase" data-phrase="Ask for a quieter version">Quieter version</button>
                         <button class="phrase" data-phrase="Show cheaper GPU alternatives">Cheaper GPU</button>
-                        <button class="phrase" data-phrase="Explain motherboard tradeoffs">Motherboard
-                            tradeoffs</button>
+                        <button class="phrase" data-phrase="Explain motherboard tradeoffs">Motherboard tradeoffs</button>
                     </div>
                     <div class="input-wrap">
-                        <textarea id="promptBox" aria-label="Ask ChatBot"
-                            placeholder="Type your preferences here...">Build me a PHP 65k 1440p gaming PC using local store availability.</textarea>
+                        <textarea id="promptBox" aria-label="Ask ChatBot" placeholder="Type your preferences here...">Build me a PHP 65k 1440p gaming PC using local store availability.</textarea>
                         <button class="btn btn-primary" id="sendBtn">Send Prompt</button>
                     </div>
                 </div>
             </section>
 
-            <!--Upgrade/Benchmark section-->
             <section class="panel insight-panel" data-od-id="build-insights" aria-labelledby="insight-title">
                 <div class="panel-head">
                     <div>
-
                         <h2 id="insight-title">Upgrade my build</h2>
                     </div>
                     <button class="btn" id="copyBtn">Copy</button>
@@ -126,8 +109,7 @@
                     </div>
                     <div class="notice">
                         <strong>Before checkout</strong>
-                        <p class="muted">Confirm your existing case supports the GPU length and the current PSU has the
-                            right PCIe power cables.</p>
+                        <p class="muted">Confirm your existing case supports the GPU length and the current PSU has the right PCIe power cables.</p>
                     </div>
                 </div>
 
@@ -191,9 +173,6 @@
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
 
     <script src="/static/script.js"></script>
-</body>
-</html>
-
 </body>
 
 </html>
