@@ -170,9 +170,264 @@
 
     <div class="toast" id="toast" role="status" aria-live="polite">Parts list copied</div>
 
-    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <script>
+        const promptBox = document.querySelector("#promptBox");
+        const messages = document.querySelector("#messages");
+        const toast = document.querySelector("#toast");
+        const phraseRow = document.querySelector("#phraseRow");
 
-    <script src="/static/script.js"></script>
+        const phraseSets = {
+            "1440p gaming": ["Ask for a quieter version", "Show cheaper GPU alternatives", "Explain motherboard tradeoffs"],
+            "video editing": ["Prioritize render speed", "Add scratch disk options", "Make it quieter"],
+            "upgrade": ["Check PSU requirements", "Rank upgrades by impact", "Keep my current case"]
+        };
+
+        function showToast(text) {
+            toast.textContent = text;
+            toast.classList.add("is-visible");
+            window.setTimeout(() => toast.classList.remove("is-visible"), 1800);
+        }
+
+        function addMessage(kind, text) {
+            const article = document.createElement("article");
+            article.className = `message ${kind}`;
+            const avatar = document.createElement("div");
+            avatar.className = "avatar";
+            avatar.textContent = kind === "user" ? "U" : "R";
+            const bubble = document.createElement("div");
+            bubble.className = "bubble";
+            bubble.textContent = text;
+            article.append(avatar, bubble);
+            messages.append(article);
+            messages.scrollTop = messages.scrollHeight;
+        }
+
+        document.querySelectorAll(".chip").forEach((chip) => {
+            chip.addEventListener("click", () => {
+                document.querySelectorAll(".chip").forEach((item) => item.classList.remove("is-selected"));
+                chip.classList.add("is-selected");
+                promptBox.value = chip.dataset.prompt;
+                promptBox.focus();
+            });
+        });
+
+        phraseRow.addEventListener("click", (event) => {
+            const phrase = event.target.closest(".phrase");
+            if (!phrase) return;
+            promptBox.value = `${promptBox.value.trim()} ${phrase.dataset.phrase}.`.trim();
+            promptBox.focus();
+        });
+
+        document.querySelector("#sendBtn").addEventListener("click", async () => {
+            const text = promptBox.value.trim();
+            if (!text) {
+                showToast("Add a budget or use case first");
+                promptBox.focus();
+                return;
+            }
+            
+            // 1. Display user's message
+            addMessage("user", text);
+            promptBox.value = "";
+            
+            // Optional: Add a temporary loading indicator
+            const loadingId = "loading-" + Date.now();
+            addMessage("assistant", "Ramsey is thinking...");
+            const loadingMessage = messages.lastElementChild.querySelector(".bubble");
+            loadingMessage.id = loadingId;
+
+            // Inject the HTML for the animated dots
+            loadingMessage.innerHTML = `Ramsey thinking<span class="typing-indicator"><span>.</span><span>.</span><span>.</span></span>`;
+
+            try {
+                    // 2. Send the message to your Python backend
+                    const response = await fetch("http://127.0.0.1:5050/api/chat", {
+                        method: "POST",
+                        headers: {
+                            "Content-Type": "application/json"
+                        },
+                        body: JSON.stringify({ message: text })
+                    });
+                    
+                    const data = await response.json();
+
+                    console.log("Ramsey's raw data:", data);
+                    
+                    // 3. Update the UI with Ramsey's actual response
+                    const bubbleToUpdate = document.getElementById(loadingId);
+                    // AFTER (add the updateBuildList call)
+                    if (data.response) {
+                        bubbleToUpdate.innerHTML = marked.parse(data.response);
+                        
+                        if (data.parts) {
+                            updateBuildList(data.parts, data.prices);
+                        }
+                        if (data.upgrades) {
+                            updateUpgradePanel(data.upgrades);
+                        }
+                        if (data.benchmark) {
+                            updateBenchmarkPanel(data.benchmark);
+                        }
+                    } else {
+                        bubbleToUpdate.textContent = "Oops, hit an error: " + data.error;
+                    }
+                } catch (error) {
+                    document.getElementById(loadingId).textContent = "Cannot connect to the AI server. Is app.py running?";
+                    console.error(error);
+                }
+        });
+
+        document.querySelectorAll(".history-card").forEach((card) => {
+            card.addEventListener("click", () => {
+                document.querySelectorAll(".history-card").forEach((item) => item.classList.remove("is-active"));
+                card.classList.add("is-active");
+                const phrases = phraseSets[card.dataset.chat] || phraseSets["1440p gaming"];
+                phraseRow.innerHTML = phrases.map((phrase) => `<button class="phrase" data-phrase="${phrase}">${phrase}</button>`).join("");
+                showToast(`${card.querySelector("strong").textContent} loaded`);
+            });
+        });
+
+        document.querySelectorAll(".tab").forEach((tab) => {
+            tab.addEventListener("click", () => {
+                document.querySelectorAll(".tab").forEach((item) => {
+                    item.classList.remove("is-active");
+                    item.setAttribute("aria-selected", "false");
+                });
+                document.querySelectorAll(".tab-page").forEach((page) => page.classList.remove("is-active"));
+                tab.classList.add("is-active");
+                tab.setAttribute("aria-selected", "true");
+                document.querySelector(`#${tab.dataset.tab}`).classList.add("is-active");
+            });
+        });
+
+        document.querySelector("#copyBtn").addEventListener("click", async () => {
+            const parts = Array.from(document.querySelectorAll("#partsList .spec-row"))
+                .map((row) => row.textContent.trim().replace(/\s+/g, ": "))
+                .join("\n");
+            try {
+                await navigator.clipboard.writeText(parts);
+                showToast("Parts list copied");
+            } catch {
+                showToast("Copy unavailable in preview");
+            }
+        });
+
+        // This function maps the AI's parts to your HTML list
+        function updateBuildList(parts, prices) {
+            const rows = document.querySelectorAll("#partsList .spec-row");
+            
+            rows.forEach(row => {
+                const label = row.querySelector(".muted").textContent.trim();
+                
+                if (parts[label] && parts[label] !== "null") {
+                    const valueSpan = row.querySelector(".value");
+                    valueSpan.textContent = parts[label];
+                    valueSpan.style.color = "var(--success)";
+                    setTimeout(() => valueSpan.style.color = "", 1000);
+
+                    // Add price + source below the part name
+                    const priceData = prices?.[label];
+                    let priceEl = row.querySelector(".price-tag");
+                    if (!priceEl) {
+                        priceEl = document.createElement("span");
+                        priceEl.className = "price-tag";
+                        row.appendChild(priceEl);
+                    }
+                    if (priceData && priceData.price) {
+                        priceEl.textContent = `${priceData.price} · ${priceData.source}`;
+                    }
+                }
+            });
+
+            // Show total estimate
+            const priceData = prices?.total_estimate;
+            if (priceData) {
+                let totalEl = document.getElementById("totalEstimate");
+                if (!totalEl) {
+                    totalEl = document.createElement("div");
+                    totalEl.id = "totalEstimate";
+                    totalEl.className = "notice";
+                    document.getElementById("partsList").appendChild(totalEl);
+                }
+                totalEl.innerHTML = `<strong>Total Estimate</strong><p class="muted">${priceData}</p>`;
+            }
+        }
+
+        function updateUpgradePanel(upgrades) {
+            const lists = {
+                keepList:    upgrades.keep,
+                replaceList: upgrades.replace_first,
+                delayList:   upgrades.delay
+            };
+
+            for (const [id, items] of Object.entries(lists)) {
+                const el = document.getElementById(id);
+                if (!el || !Array.isArray(items) || items.length === 0) continue;
+                el.innerHTML = items.map(item => `<li>${item}</li>`).join("");
+            }
+        }
+        function updateBenchmarkPanel(benchmark) {
+            const sections = [
+                { key: 'gaming',        barId: 'bench-gaming-bar',  scoreId: 'bench-gaming-score',  descId: 'bench-gaming-desc' },
+                { key: 'work',          barId: 'bench-work-bar',    scoreId: 'bench-work-score',    descId: 'bench-work-desc' },
+                { key: 'upgradability', barId: 'bench-upgrade-bar', scoreId: 'bench-upgrade-score', descId: 'bench-upgrade-desc' },
+            ];
+
+            const scoreClass = (score) => {
+                if (score >= 75) return 'score-good';
+                if (score >= 55) return 'score-warn';
+                return 'score-bad';
+            };
+
+            sections.forEach(({ key, barId, scoreId, descId }) => {
+                const data = benchmark[key];
+                if (!data) return;
+
+                // Animate bar
+                const bar = document.getElementById(barId);
+                if (bar) {
+                    bar.style.setProperty('--bar-value', '0%');
+                    requestAnimationFrame(() => {
+                        setTimeout(() => bar.style.setProperty('--bar-value', `${data.score}%`), 50);
+                    });
+                }
+
+                // Update score label
+                const scoreEl = document.getElementById(scoreId);
+                if (scoreEl) {
+                    scoreEl.textContent = data.label || `${data.score}%`;
+                    scoreEl.className = `score ${scoreClass(data.score)}`;
+                }
+
+                // Update description
+                const descEl = document.getElementById(descId);
+                if (descEl && data.description) descEl.textContent = data.description;
+            });
+
+            // Gaming-specific: games list
+            const gamingData = benchmark.gaming;
+            if (gamingData) {
+                const section = document.getElementById('bench-games-section');
+                const goodList = document.getElementById('bench-games-good');
+                const badList  = document.getElementById('bench-games-bad');
+
+                if (Array.isArray(gamingData.games_good) && gamingData.games_good.length > 0) {
+                    goodList.innerHTML = gamingData.games_good.map(g => `<li>${g}</li>`).join('');
+                    section.style.display = 'block';
+                }
+                if (Array.isArray(gamingData.games_bad) && gamingData.games_bad.length > 0) {
+                    badList.innerHTML = gamingData.games_bad.map(g => `<li>${g}</li>`).join('');
+                    section.style.display = 'block';
+                }
+            }
+
+            // Auto-switch to benchmark tab to show the user
+            const benchTab = document.querySelector('[data-tab="bench"]');
+            if (benchTab) benchTab.click();
+        }
+    
+      </script>
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
 
 </body>
 
