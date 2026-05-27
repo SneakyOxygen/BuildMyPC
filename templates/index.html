@@ -1,0 +1,199 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>AI PC Builder UI</title>
+    <link rel="stylesheet" href="styling.css">
+</head>
+
+<body style="background-color: #0c0f2c; font-family: Inter, system-ui, sans-serif;">
+    <div class="app-shell">
+
+        <!--Chat history-->
+        <main class="workbench">
+            <section class="panel" data-od-id="saved-chat-history" aria-labelledby="history-title">
+                <div class="panel-head">
+                    <div>
+                        <h2 id="history-title">Chat history</h2>
+                    </div>
+                </div>
+                <div class="history-list" id="historyList">
+                    <button class="history-card is-active" data-chat="1440p gaming">
+                        <strong>1440p gaming rig</strong>
+                        <span class="muted">Budget-first AM5 build with upgrade headroom.</span>
+                        <span class="history-meta"><span>Today</span><span>Draft</span></span>
+                    </button>
+                    <button class="history-card" data-chat="video editing">
+                        <strong>Video editing tower</strong>
+                        <span class="muted">Quiet case, strong multicore CPU, fast scratch disk.</span>
+                        <span class="history-meta"><span>Sat</span><span>Saved</span></span>
+                    </button>
+                    <button class="history-card" data-chat="upgrade">
+                        <strong>Upgrade my current PC</strong>
+                        <span class="muted">Keep the case and PSU, replace slowest parts first.</span>
+                        <span class="history-meta"><span>May 18</span><span>Compared</span></span>
+                    </button>
+                </div>
+            </section>
+
+            <!--Chat section-->
+            <section class="panel chat-panel" data-od-id="ai-chat-builder" aria-labelledby="chat-title">
+                <div class="chat-head">
+                    <h1 id="chat-title">Welcome! How can I assist you?</h1>
+                </div>
+
+                <div class="messages" id="messages" aria-live="polite">
+
+                </div>
+
+                <!--Suggested prompts-->
+                <div class="composer" data-od-id="prompt-area">
+                    <div class="chip-row" aria-label="Suggested prompts">
+                        <button class="chip is-selected"
+                            data-prompt="Build me a PHP 65k 1440p gaming PC using local store availability.">Budget
+                            gaming PC</button>
+                        <button class="chip"
+                            data-prompt="Upgrade my current PC for better gaming performance without replacing everything.">Upgrade
+                            my current PC</button>
+                        <button class="chip"
+                            data-prompt="Compare two PC builds for gaming, streaming, and video editing workloads.">Benchmark
+                            two builds</button>
+                        <button class="chip"
+                            data-prompt="Build a quiet PC for Premiere Pro, DaVinci Resolve, and casual gaming.">Video
+                            editing PC</button>
+                    </div>
+                    <div class="phrase-row" aria-label="Suggested phrases for this chat" id="phraseRow">
+                        <button class="phrase" data-phrase="Ask for a quieter version">Quieter version</button>
+                        <button class="phrase" data-phrase="Show cheaper GPU alternatives">Cheaper GPU</button>
+                        <button class="phrase" data-phrase="Explain motherboard tradeoffs">Motherboard
+                            tradeoffs</button>
+                    </div>
+                    <div class="input-wrap">
+                        <textarea id="promptBox" aria-label="Ask ChatBot"
+                            placeholder="Type your preferences here...">Build me a PHP 65k 1440p gaming PC using local store availability.</textarea>
+                        <button class="btn btn-primary" id="sendBtn">Send Prompt</button>
+                    </div>
+                </div>
+            </section>
+
+            <!--Upgrade/Benchmark section-->
+            <section class="panel insight-panel" data-od-id="build-insights" aria-labelledby="insight-title">
+                <div class="panel-head">
+                    <div>
+
+                        <h2 id="insight-title">Upgrade my build</h2>
+                    </div>
+                    <button class="btn" id="copyBtn">Copy</button>
+                </div>
+                <div class="tabs" role="tablist" aria-label="Build insight tabs">
+                    <button class="tab is-active" role="tab" aria-selected="true" data-tab="parts">Parts</button>
+                    <button class="tab" role="tab" aria-selected="false" data-tab="upgrade">Upgrade</button>
+                    <button class="tab" role="tab" aria-selected="false" data-tab="bench">Benchmark</button>
+                </div>
+
+                <div class="tab-page is-active" id="parts" role="tabpanel">
+                    <div id="partsList">
+                        <div class="spec-row">
+                            <span class="muted">CPU</span>
+                            <span class="value"></span>
+                        </div>
+                        <div class="spec-row">
+                            <span class="muted">GPU</span>
+                            <span class="value"></span>
+                        </div>
+                        <div class="spec-row">
+                            <span class="muted">Motherboard</span>
+                            <span class="value"></span>
+                        </div>
+                        <div class="spec-row">
+                            <span class="muted">RAM</span>
+                            <span class="value"></span>
+                        </div>
+                        <div class="spec-row">
+                            <span class="muted">Storage</span>
+                            <span class="value"></span>
+                        </div>
+                        <div class="spec-row">
+                            <span class="muted">Power Supply</span>
+                            <span class="value"></span>
+                        </div>
+                        <div class="spec-row">
+                            <span class="muted">Case</span>
+                            <span class="value"></span>
+                        </div>
+                    </div>
+                    <div class="notice">
+                        <strong>Before checkout</strong>
+                        <p class="muted">Confirm your existing case supports the GPU length and the current PSU has the
+                            right PCIe power cables.</p>
+                    </div>
+                </div>
+
+                <div class="tab-page" id="upgrade" role="tabpanel">
+                    <div class="mini-card" id="upgradeKeep">
+                        <h3>Keep</h3>
+                        <ul class="upgrade-list muted" id="keepList">
+                            <li>Ask Ramsey for a build to see suggestions.</li>
+                        </ul>
+                    </div>
+                    <div class="mini-card" id="upgradeReplace">
+                        <h3>Replace first</h3>
+                        <ul class="upgrade-list muted" id="replaceList">
+                            <li>High-impact upgrades will appear here.</li>
+                        </ul>
+                    </div>
+                    <div class="mini-card" id="upgradeDelay">
+                        <h3>Delay</h3>
+                        <ul class="upgrade-list muted" id="delayList">
+                            <li>Low-priority items will appear here.</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="tab-page" id="bench" role="tabpanel">
+                    <div class="mini-card" id="bench-gaming">
+                        <h3>Gaming</h3>
+                        <p class="muted bench-desc" id="bench-gaming-desc">Ask Ramsey for a build to see your gaming performance estimate.</p>
+                        <div class="bar" aria-label="Gaming suitability"><span id="bench-gaming-bar" style="--bar-value: 0%;"></span></div>
+                        <p class="score" id="bench-gaming-score">—</p>
+                        <div id="bench-games-section" style="display:none; margin-top: 10px;">
+                            <div style="margin-bottom: 6px;">
+                                <p class="bench-games-label" style="font-size:0.7rem; font-weight:600; color: var(--success); text-transform:uppercase; letter-spacing:0.05em; margin-bottom:4px;">✓ Runs Well</p>
+                                <ul class="upgrade-list muted" id="bench-games-good"></ul>
+                            </div>
+                            <div>
+                                <p class="bench-games-label" style="font-size:0.7rem; font-weight:600; color: var(--warn); text-transform:uppercase; letter-spacing:0.05em; margin-bottom:4px;">✗ Will Struggle</p>
+                                <ul class="upgrade-list muted" id="bench-games-bad"></ul>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="mini-card" id="bench-work">
+                        <h3>Work</h3>
+                        <p class="muted bench-desc" id="bench-work-desc">Productivity and content creation suitability will appear here.</p>
+                        <div class="bar" aria-label="Work suitability"><span id="bench-work-bar" style="--bar-value: 0%;"></span></div>
+                        <p class="score" id="bench-work-score">—</p>
+                    </div>
+                    <div class="mini-card" id="bench-upgrade">
+                        <h3>Upgradability</h3>
+                        <p class="muted bench-desc" id="bench-upgrade-desc">Future upgrade potential will appear here.</p>
+                        <div class="bar" aria-label="Upgrade runway"><span id="bench-upgrade-bar" style="--bar-value: 0%;"></span></div>
+                        <p class="score" id="bench-upgrade-score">—</p>
+                    </div>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <div class="toast" id="toast" role="status" aria-live="polite">Parts list copied</div>
+
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+
+    <script src="script.js"></script>
+</body>
+</html>
+
+</body>
+
+</html>
