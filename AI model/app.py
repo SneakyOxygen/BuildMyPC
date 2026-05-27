@@ -1,4 +1,5 @@
-import json # Add this at the top with your other imports!
+import os
+import json 
 from flask import Flask, request, jsonify
 from flask_cors import CORS
 import google.generativeai as genai
@@ -6,7 +7,22 @@ import google.generativeai as genai
 app = Flask(__name__)
 CORS(app) 
 
-genai.configure(api_key="API")
+# Securely grab the API key from Railway's environment variables
+api_key = os.environ.get("GEMINI_API_KEY")
+genai.configure(api_key=api_key)
+
+# ... (Keep your entire ramsey_persona and route logic exactly the same) ...
+
+@app.route('/api/chat', methods=['POST'])
+def chat_endpoint():
+    # ... (Keep your chat_endpoint logic exactly the same) ...
+    pass
+
+if __name__ == '__main__':
+    # Railway passes a PORT variable. We fallback to 5050 for local testing.
+    port = int(os.environ.get("PORT", 5050))
+    # '0.0.0.0' is required so Railway can expose the app to the internet
+    app.run(host='0.0.0.0', port=port)
 
 # 1. Update the persona with STRICT JSON rules
 ramsey_persona = """
