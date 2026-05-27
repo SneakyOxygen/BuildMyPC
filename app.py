@@ -1,6 +1,6 @@
 import os
 import json 
-from flask import Flask, request, jsonify
+from flask import Flask, request, jsonify, render_template  # Added render_template
 from flask_cors import CORS
 import google.generativeai as genai
 
@@ -10,19 +10,6 @@ CORS(app)
 # Securely grab the API key from Railway's environment variables
 api_key = os.environ.get("GEMINI_API_KEY")
 genai.configure(api_key=api_key)
-
-# ... (Keep your entire ramsey_persona and route logic exactly the same) ...
-
-@app.route('/api/chat', methods=['POST'])
-def chat_endpoint():
-    # ... (Keep your chat_endpoint logic exactly the same) ...
-    pass
-
-if __name__ == '__main__':
-    # Railway passes a PORT variable. We fallback to 5050 for local testing.
-    port = int(os.environ.get("PORT", 5050))
-    # '0.0.0.0' is required so Railway can expose the app to the internet
-    app.run(host='0.0.0.0', port=port)
 
 # 1. Update the persona with STRICT JSON rules
 ramsey_persona = """
@@ -115,12 +102,19 @@ PRICING RULES:
 model = genai.GenerativeModel(
     "gemini-2.5-flash",
     system_instruction=ramsey_persona,
-    generation_config={"response_mime_type": "application/json"} # This forces valid JSON!
+    generation_config={"response_mime_type": "application/json"}
 )
 chat = model.start_chat(history=[])
 
+# --- WEB APPLICATION ROUTE IMPLEMENTATIONS ---
+
+@app.route('/')
+def home():
+    # This explicitly links your live URL directly to your templates/index.html file!
+    return render_template('index.html')
+
 @app.route('/api/chat', methods=['POST'])
-def chat_endpoint_2():
+def chat_endpoint():
     data = request.json
     user_input = data.get('message')
     
@@ -129,8 +123,6 @@ def chat_endpoint_2():
     
     try:
         response = chat.send_message(user_input)
-        
-        # 3. Parse Gemini's JSON response
         ai_data = json.loads(response.text)
         
         return jsonify({
@@ -144,7 +136,6 @@ def chat_endpoint_2():
         return jsonify({"error": str(e)}), 500
 
 if __name__ == '__main__':
-    # Dynamically pick up the port Railway assigns or default to 5050 locally
+    # Dynamically pick up the port Railway assigns or default to 8080
     port = int(os.environ.get("PORT", 8080))
-    # '0.0.0.0' opens up the application to accept public deployment traffic
     app.run(host='0.0.0.0', port=port)
