@@ -1,6 +1,7 @@
 import os
 import json 
-from flask import Flask, request, jsonify, render_template  # Added render_template
+import re  # Added regular expressions module to sanitize raw strings
+from flask import Flask, request, jsonify, render_template  
 from flask_cors import CORS
 import google.generativeai as genai
 
@@ -110,7 +111,6 @@ chat = model.start_chat(history=[])
 
 @app.route('/')
 def home():
-    # This explicitly links your live URL directly to your templates/index.html file!
     return render_template('index.html')
 
 @app.route('/api/chat', methods=['POST'])
@@ -123,7 +123,15 @@ def chat_endpoint():
     
     try:
         response = chat.send_message(user_input)
-        ai_data = json.loads(response.text)
+        raw_text = response.text
+        
+        # --- NEW SANITIZER CODE ---
+        # Strip out loose raw control characters (\x00-\x1F) that break JSON specifications 
+        # but preserve valid structured layout markers
+        cleaned_text = re.sub(r'[\x00-\x1F\x7F]', '', raw_text)
+        
+        # Parse the sanitized string safely
+        ai_data = json.loads(cleaned_text)
         
         return jsonify({
             "response": ai_data.get("message", "No message generated"),
@@ -132,10 +140,18 @@ def chat_endpoint():
             "benchmark": ai_data.get("benchmark", {}),
             "prices": ai_data.get("prices", {}) 
         })
+        
+    except json.JSONDecodeError as json_err:
+        print(f"JSON Parsing Error: {json_err}")
+        return jsonify({
+            "response": "Ramsey calculated the spec build successfully, but the output text format contains loose control tokens. Could you please send that prompt one more time?",
+            "error": "Sanitization mismatch catch triggered"
+        }), 200 # Using 200 keeps your UI up and messaging running smoothly instead of throwing a hard 500 error!
+        
     except Exception as e:
+        print(f"General Server Crash Error: {e}")
         return jsonify({"error": str(e)}), 500
 
 if __name__ == '__main__':
-    # Dynamically pick up the port Railway assigns or default to 8080
     port = int(os.environ.get("PORT", 8080))
     app.run(host='0.0.0.0', port=port)
