@@ -20,21 +20,7 @@
                     </div>
                 </div>
                 <div class="history-list" id="historyList">
-                    <button class="history-card is-active" data-chat="1440p gaming">
-                        <strong>1440p gaming rig</strong>
-                        <span class="muted">Budget-first AM5 build with upgrade headroom.</span>
-                        <span class="history-meta"><span>Today</span><span>Draft</span></span>
-                    </button>
-                    <button class="history-card" data-chat="video editing">
-                        <strong>Video editing tower</strong>
-                        <span class="muted">Quiet case, strong multicore CPU, fast scratch disk.</span>
-                        <span class="history-meta"><span>Sat</span><span>Saved</span></span>
-                    </button>
-                    <button class="history-card" data-chat="upgrade">
-                        <strong>Upgrade my current PC</strong>
-                        <span class="muted">Keep the case and PSU, replace slowest parts first.</span>
-                        <span class="history-meta"><span>May 18</span><span>Compared</span></span>
-                    </button>
+                    <p class="muted" style="padding: 20px; font-size: 0.9rem; text-align: center;">Loading build history...</p>
                 </div>
             </section>
 
@@ -189,6 +175,74 @@
     <div class="toast" id="toast" role="status" aria-live="polite">Parts list copied</div>
 
     <script>
+
+        async function loadSavedBuilds() {
+            try {
+                const response = await fetch("/api/history");
+                const builds = await response.json();
+                const historyList = document.querySelector("#historyList");
+            
+                if (!Array.isArray(builds) || builds.length === 0) {
+                    historyList.innerHTML = `<p class="muted" style="padding: 20px; font-size: 0.9rem; text-align: center;">No saved builds yet.</p>`;
+                    return;
+                }
+            
+                // Clear out the placeholder text
+                historyList.innerHTML = "";
+            
+                builds.forEach((build, index) => {
+                    const card = document.createElement("button");
+                    card.className = `history-card ${index === 0 ? 'is-active' : ''}`;
+                
+                    const buildDate = new Date(build.created_at).toLocaleDateString(undefined, {
+                        month: 'short',
+                        day: 'numeric'
+                    });
+                
+                    card.innerHTML = `
+                        <strong>${build.title}</strong>
+                        <span class="muted">${build.description || 'Custom Rig Configuration'}</span>
+                        <span class="history-meta"><span>${buildDate}</span><span>Saved</span></span>
+                    `;
+                
+                    // When clicked, swap all information dashboards to show this old build
+                    card.addEventListener("click", () => {
+                        document.querySelectorAll(".history-card").forEach(item => item.classList.remove("is-active"));
+                        card.classList.add("is-active");
+                    
+                        // Backfill chat panel
+                        const messages = document.querySelector("#messages");
+                        messages.innerHTML = "";
+                    
+                        // Add user question bubble
+                        const userArticle = document.createElement("article");
+                        userArticle.className = "message user";
+                        userArticle.innerHTML = `<div class="avatar">U</div><div class="bubble">${build.title}</div>`;
+                        messages.appendChild(userArticle);
+                    
+                        // Add Ramsey answer bubble
+                        const aiArticle = document.createElement("article");
+                        aiArticle.className = "message assistant";
+                        let cleanedMarkdown = build.response.replace(/\\n/g, '\n');
+                        aiArticle.innerHTML = `<div class="avatar">R</div><div class="bubble">${marked.parse(cleanedMarkdown)}</div>`;
+                        messages.appendChild(aiArticle);
+                    
+                        // Update data tracking boxes
+                        if (build.parts) updateBuildList(build.parts, build.prices);
+                        if (build.upgrades) updateUpgradePanel(build.upgrades);
+                        if (build.benchmark) updateBenchmarkPanel(build.benchmark);
+                    });
+                
+                    historyList.appendChild(card);
+                });
+            } catch (err) {
+                console.error("Error loading historical builds:", err);
+            }
+        }
+    
+        // Make sure this runs the moment the page opens up
+        window.addEventListener("DOMContentLoaded", loadSavedBuilds);
+
         const promptBox = document.querySelector("#promptBox");
         const messages = document.querySelector("#messages");
         const toast = document.querySelector("#toast");
