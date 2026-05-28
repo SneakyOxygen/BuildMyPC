@@ -4,9 +4,38 @@ import re  # Added regular expressions module to sanitize raw strings
 from flask import Flask, request, jsonify, render_template  
 from flask_cors import CORS
 import google.generativeai as genai
+from flask_sqlalchemy import SQLAlchemy
+from datetime import datetime
 
 app = Flask(__name__)
 CORS(app) 
+
+# --- DATABASE CONFIGURATION (DUAL-MODE) ---
+# When deployed to Railway, it reads DATABASE_URL. Locally, it generates a 'local_backup.db' file.
+DATABASE_URL = os.environ.get("DATABASE_URL")
+if DATABASE_URL and DATABASE_URL.startswith("postgres://"):
+    DATABASE_URL = DATABASE_URL.replace("postgres://", "postgresql://", 1)
+
+app.config['SQLALCHEMY_DATABASE_URI'] = DATABASE_URL or 'sqlite:///local_backup.db'
+app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+
+db = SQLAlchemy(app)
+
+# --- DATABASE SCHEMA (LAYOUT TABLE) ---
+class PCBuild(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    title = db.Column(db.String(100), nullable=False)
+    description = db.Column(db.String(200))
+    response = db.Column(db.Text, nullable=False)        # Conversational Markdown response
+    parts = db.Column(db.Text)                           # Stringified JSON block
+    prices = db.Column(db.Text)                          # Stringified JSON block
+    upgrades = db.Column(db.Text)                        # Stringified JSON block
+    benchmark = db.Column(db.Text)                       # Stringified JSON block
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+# Automatically generate database tables inside app environment context
+with app.app_context():
+    db.create_all()
 
 # Securely grab the API key from Railway's environment variables
 api_key = os.environ.get("GEMINI_API_KEY")
