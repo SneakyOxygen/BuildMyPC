@@ -11,17 +11,23 @@ app = Flask(__name__)
 CORS(app) 
 
 # --- DATABASE CONFIGURATION (DUAL-MODE) ---
-# When deployed to Railway, it reads DATABASE_URL. Locally, it generates a 'local_backup.db' file.
+# When deployed to Railway, it reads DATABASE_URL. Locally, it connects to your local PostgreSQL engine.
 DATABASE_URL = os.environ.get("DATABASE_URL")
-if DATABASE_URL and DATABASE_URL.startswith("postgres://"):
+
+if not DATABASE_URL:
+    # Use your local PostgreSQL instead of SQLite now!
+    DATABASE_URL = "postgresql://postgres:admin123@localhost:5432/ramsey_db"
+
+if DATABASE_URL.startswith("postgres://"):
     DATABASE_URL = DATABASE_URL.replace("postgres://", "postgresql://", 1)
 
-app.config['SQLALCHEMY_DATABASE_URI'] = DATABASE_URL or 'sqlite:///local_backup.db'
+app.config['SQLALCHEMY_DATABASE_URI'] = DATABASE_URL
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
 db = SQLAlchemy(app)
 
 # --- DATABASE SCHEMA (LAYOUT TABLE) ---
+# LEAVE THIS EXACTLY AS IT WAS - Flask needs this to construct the database rules!
 class PCBuild(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     title = db.Column(db.String(100), nullable=False)
