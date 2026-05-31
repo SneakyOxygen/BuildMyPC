@@ -11,17 +11,23 @@ app = Flask(__name__)
 CORS(app) 
 
 # --- DATABASE CONFIGURATION (DUAL-MODE) ---
-# When deployed to Railway, it reads DATABASE_URL. Locally, it generates a 'local_backup.db' file.
+# When deployed to Railway, it reads DATABASE_URL. Locally, it connects to your local PostgreSQL engine.
 DATABASE_URL = os.environ.get("DATABASE_URL")
-if DATABASE_URL and DATABASE_URL.startswith("postgres://"):
+
+if not DATABASE_URL:
+    # Use your local PostgreSQL instead of SQLite now!
+    DATABASE_URL = "***REMOVED***"
+
+if DATABASE_URL.startswith("postgres://"):
     DATABASE_URL = DATABASE_URL.replace("postgres://", "postgresql://", 1)
 
-app.config['SQLALCHEMY_DATABASE_URI'] = DATABASE_URL or 'sqlite:///local_backup.db'
+app.config['SQLALCHEMY_DATABASE_URI'] = DATABASE_URL
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
 db = SQLAlchemy(app)
 
 # --- DATABASE SCHEMA (LAYOUT TABLE) ---
+# LEAVE THIS EXACTLY AS IT WAS - Flask needs this to construct the database rules!
 class PCBuild(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     title = db.Column(db.String(100), nullable=False)
@@ -142,6 +148,34 @@ chat = model.start_chat(history=[])
 def home():
     return render_template('index.html')
 
+@app.route('/api/history', methods=['GET'])
+def get_build_history():
+    try:
+        # 1. Fetch all build records from your PostgreSQL table, newest first
+        builds = PCBuild.query.order_by(PCBuild.created_at.desc()).all()
+        
+        # 2. Format the rows into a clean list of dictionaries for the frontend
+        history_list = []
+        for build in builds:
+            history_list.append({
+                "id": build.id,
+                "title": build.title,
+                "description": build.description,
+                "parts": json.loads(build.parts) if build.parts else {},
+                "prices": json.loads(build.prices) if build.prices else {},
+                "upgrades": json.loads(build.upgrades) if build.upgrades else {},
+                "benchmark": json.loads(build.benchmark) if build.benchmark else {},
+                "response": build.response,
+                "created_at": build.created_at.strftime("%b %d, %Y")
+            })
+            
+        return jsonify(history_list), 200
+
+    except Exception as e:
+        print(f"❌ HISTORY FETCH ERROR: {e}")
+        return jsonify({"error": "Could not retrieve history data"}), 500
+
+
 @app.route('/api/chat', methods=['POST'])
 def chat_endpoint():
     data = request.json
@@ -154,33 +188,61 @@ def chat_endpoint():
         response = chat.send_message(user_input)
         raw_text = response.text
         
-        # --- NEW SANITIZER CODE ---
-        # Strip out loose raw control characters (\x00-\x1F) that break JSON specifications 
-        # but preserve valid structured layout markers
+        # Clean out loose raw control characters
         cleaned_text = re.sub(r'[\x00-\x1F\x7F]', '', raw_text)
         
-        # Parse the sanitized string safely
-        ai_data = json.loads(cleaned_text)
+        # Fallbacks if the AI sends plain prose text instead of full JSON layouts
+        message_content = cleaned_text
+        parts_data = {}
+        upgrades_data = {}
+        benchmark_data = {}
+        prices_data = {}
+
+        # Safe try-parse block to split structured JSON attributes if available
+        try:
+            ai_data = json.loads(cleaned_text)
+            message_content = ai_data.get("message", "No message generated")
+            parts_data = ai_data.get("parts", {})
+            upgrades_data = ai_data.get("upgrades", {})
+            benchmark_data = ai_data.get("benchmark", {})
+            prices_data = ai_data.get("prices", {})
+        except json.JSONDecodeError:
+            print("💡 Info: AI response parsed as markdown formatting string.")
+
+        # --- 💾 POSTGRESQL DATABASE WRITER BLOCK ---
+        new_build = PCBuild(
+            title=user_input[:100],  
+            description="Generated via Web UI Dashboard",
+            response=message_content,
+            parts=json.dumps(parts_data),
+            prices=json.dumps(prices_data),
+            upgrades=json.dumps(upgrades_data),
+            benchmark=json.dumps(benchmark_data)
+        )
         
+        try:
+            db.session.add(new_build)
+            db.session.commit()
+            print("🎉 SUCCESS: Saved configuration directly to PostgreSQL!")
+        except Exception as db_err:
+            db.session.rollback()
+            print(f"❌ DATABASE TRANSACTION REJECTED: {db_err}")
+        # --------------------------------------------
+
         return jsonify({
-            "response": ai_data.get("message", "No message generated"),
-            "parts": ai_data.get("parts", {}),
-            "upgrades": ai_data.get("upgrades", {}),
-            "benchmark": ai_data.get("benchmark", {}),
-            "prices": ai_data.get("prices", {}) 
+            "response": message_content,
+            "parts": parts_data,
+            "upgrades": upgrades_data,
+            "benchmark": benchmark_data,
+            "prices": prices_data 
         })
-        
-    except json.JSONDecodeError as json_err:
-        print(f"JSON Parsing Error: {json_err}")
-        return jsonify({
-            "response": "Ramsey calculated the spec build successfully, but the output text format contains loose control tokens. Could you please send that prompt one more time?",
-            "error": "Sanitization mismatch catch triggered"
-        }), 200 # Using 200 keeps your UI up and messaging running smoothly instead of throwing a hard 500 error!
         
     except Exception as e:
         print(f"General Server Crash Error: {e}")
         return jsonify({"error": str(e)}), 500
-
+    
+    
+    
 if __name__ == '__main__':
     port = int(os.environ.get("PORT", 8080))
     app.run(host='0.0.0.0', port=port)
