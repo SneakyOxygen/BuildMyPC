@@ -16,7 +16,7 @@ DATABASE_URL = os.environ.get("DATABASE_URL")
 
 if not DATABASE_URL:
     # Use your local PostgreSQL instead of SQLite now!
-    DATABASE_URL = "***REMOVED***"
+    DATABASE_URL = "postgresql://postgres:admin123@localhost:5432/ramsey_db"
 
 if DATABASE_URL.startswith("postgres://"):
     DATABASE_URL = DATABASE_URL.replace("postgres://", "postgresql://", 1)
