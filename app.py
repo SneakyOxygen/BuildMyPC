@@ -12,7 +12,10 @@ CORS(app)
 
 # --- DATABASE CONFIGURATION (DUAL-MODE) ---
 # When deployed to Railway, it reads DATABASE_URL. Locally, it connects to your local PostgreSQL engine.
-DATABASE_URL = os.environ.get("DATABASE_URL")
+DATABASE_URL = (
+                os.environ.get("DATABASE_URL") or
+                os.environ.get("DATABASE_PUBLIC_URL")
+)
 
 if not DATABASE_URL:
     # Use your local PostgreSQL instead of SQLite now!
