@@ -5,7 +5,7 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>AI PC Builder UI</title>
-    <link rel="stylesheet" href="/static/styling.css">
+    <link rel="stylesheet" href="{{ url_for('static', filename='styling.css') }}">
 </head>
 
 <body style="background-color: #0c0f2c; font-family: Inter, system-ui, sans-serif;">
@@ -36,30 +36,39 @@
 
                 <!--Suggested prompts-->
                 <div class="composer" data-od-id="prompt-area">
-                    <div class="chip-row" aria-label="Suggested prompts">
-                        <button class="chip is-selected"
-                            data-prompt="Build me a PHP 65k 1440p gaming PC using local store availability.">Budget
+                    <div class="starter-row" id="starterRow" aria-label="Conversation starters">
+                        <button class="chip"
+                            data-prompt="Build me a PHP 150k Gaming PC using local store availability.">High-end
                             gaming PC</button>
                         <button class="chip"
-                            data-prompt="Upgrade my current PC for better gaming performance without replacing everything.">Upgrade
-                            my current PC</button>
-                        <button class="chip"
-                            data-prompt="Compare two PC builds for gaming, streaming, and video editing workloads.">Benchmark
-                            two builds</button>
-                        <button class="chip"
-                            data-prompt="Build a quiet PC for Premiere Pro, DaVinci Resolve, and casual gaming.">Video
+                            data-prompt="Build a PC good enough for Premiere Pro, DaVinci Resolve, and casual gaming. Money is not an issue but keep it as frugal as possible.">Video
                             editing PC</button>
+                        <button class="chip"
+                            data-prompt="Build me a PHP 15k PC using local store availability. 2nd-hand parts are very much accepted too.">Ultra-budget Gaming
+                            PC</button>
+                        <button class="chip"
+                            data-prompt="Build me a reliable Work/Home/School PC using local store availability and 2nd-hand parts are acceptable too. Make sure to keep the price under PHP 20k.">Work/Home/School 
+                            PC</button>
                     </div>
-                    <div class="phrase-row" aria-label="Suggested phrases for this chat" id="phraseRow">
-                        <button class="phrase" data-phrase="Ask for a quieter version">Quieter version</button>
-                        <button class="phrase" data-phrase="Show cheaper GPU alternatives">Cheaper GPU</button>
-                        <button class="phrase" data-phrase="Explain motherboard tradeoffs">Motherboard
-                            tradeoffs</button>
+                    <div class="phrase-row" aria-label="Suggested follow-ups" id="phraseRow" style="display:none;">
                     </div>
                     <div class="input-wrap">
                         <textarea id="promptBox" aria-label="Ask ChatBot"
-                            placeholder="Type your preferences here...">Build me a PHP 65k 1440p gaming PC using local store availability.</textarea>
-                        <button class="btn btn-primary" id="sendBtn">Send Prompt</button>
+                            placeholder="Type your preferences here..."></textarea>
+                        <div class="voice-btn-group">
+                            <!-- Send Prompt -->
+                            <button class="btn btn-primary icon-btn" id="sendBtn" aria-label="Send Prompt" title="Send Prompt">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="19" x2="12" y2="5"/><polyline points="5 12 12 5 19 12"/></svg>
+                            </button>
+                            <!-- Push to Talk -->
+                            <button class="btn btn-voice icon-btn" id="pttBtn" aria-label="Push to Talk — hold to speak" title="Push to Talk">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M12 1a4 4 0 0 1 4 4v6a4 4 0 0 1-8 0V5a4 4 0 0 1 4-4z"/><path fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" d="M19 10a7 7 0 0 1-14 0M12 19v4M8 23h8"/></svg>
+                            </button>
+                            <!-- Open Mic -->
+                            <button class="btn btn-voice icon-btn" id="openMicBtn" aria-label="Open Mic — continuous listening" title="Open Mic">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 7 23 1 17 1"/><line x1="16" y1="8" x2="23" y2="1"/><path d="M12 1a4 4 0 0 1 4 4v6a4 4 0 0 1-8 0V5a4 4 0 0 1 4-4z" fill="currentColor" stroke="none"/><path stroke="currentColor" stroke-width="2" stroke-linecap="round" d="M19 10a7 7 0 0 1-14 0M12 19v4M8 23h8"/></svg>
+                            </button>
+                        </div>
                     </div>
                 </div>
             </section>
@@ -248,12 +257,6 @@
         const toast = document.querySelector("#toast");
         const phraseRow = document.querySelector("#phraseRow");
 
-        const phraseSets = {
-            "1440p gaming": ["Ask for a quieter version", "Show cheaper GPU alternatives", "Explain motherboard tradeoffs"],
-            "video editing": ["Prioritize render speed", "Add scratch disk options", "Make it quieter"],
-            "upgrade": ["Check PSU requirements", "Rank upgrades by impact", "Keep my current case"]
-        };
-
         function showToast(text) {
             toast.textContent = text;
             toast.classList.add("is-visible");
@@ -274,6 +277,29 @@
             messages.scrollTop = messages.scrollHeight;
         }
 
+        const starterRow = document.getElementById('starterRow');
+        let starterDismissed = false;
+
+        function dismissStarters() {
+            if (starterDismissed || !starterRow) return;
+            starterDismissed = true;
+            starterRow.classList.add('is-dismissed');
+            // Remove from flow after animation completes
+            starterRow.addEventListener('animationend', () => {
+                starterRow.style.display = 'none';
+            }, { once: true });
+        }
+
+        function showSuggestedPhrases(phrases) {
+            if (!phrases || phrases.length === 0) return;
+            phraseRow.innerHTML = phrases.map(p =>
+                `<button class="phrase-full" data-phrase="${p}">${p}</button>`
+            ).join('');
+            phraseRow.style.display = 'flex';
+            // Trigger slide-up animation
+            requestAnimationFrame(() => phraseRow.classList.add('is-visible'));
+        }
+
         document.querySelectorAll(".chip").forEach((chip) => {
             chip.addEventListener("click", () => {
                 document.querySelectorAll(".chip").forEach((item) => item.classList.remove("is-selected"));
@@ -284,77 +310,343 @@
         });
 
         phraseRow.addEventListener("click", (event) => {
-            const phrase = event.target.closest(".phrase");
+            const phrase = event.target.closest(".phrase-full");
             if (!phrase) return;
-            promptBox.value = `${promptBox.value.trim()} ${phrase.dataset.phrase}.`.trim();
+            promptBox.value = phrase.dataset.phrase;
             promptBox.focus();
+            // Phrases stay visible — they'll be cleared when the user sends the message
         });
 
-        document.querySelector("#sendBtn").addEventListener("click", async () => {
-            const text = promptBox.value.trim();
+        // ── Core send function (shared by all three input methods) ──────────
+        async function sendPrompt(text) {
             if (!text) {
                 showToast("Add a budget or use case first");
                 promptBox.focus();
                 return;
             }
-            
-            // 1. Display user's message
+
+            dismissStarters();
+
+            // Hide existing phrases while loading
+            phraseRow.classList.remove('is-visible');
+            setTimeout(() => { phraseRow.style.display = 'none'; }, 300);
+
             addMessage("user", text);
             promptBox.value = "";
-            
-            // Optional: Add a temporary loading indicator
+
             const loadingId = "loading-" + Date.now();
             addMessage("assistant", "Ramsey is thinking...");
             const loadingMessage = messages.lastElementChild.querySelector(".bubble");
             loadingMessage.id = loadingId;
-
-            // Inject the HTML for the animated dots
             loadingMessage.innerHTML = `Ramsey thinking<span class="typing-indicator"><span>.</span><span>.</span><span>.</span></span>`;
 
             try {
-                    // 2. Send the message to your Python backend
-                    const response = await fetch("/api/chat", {
-                        method: "POST",
-                        headers: {
-                            "Content-Type": "application/json"
-                        },
-                        body: JSON.stringify({ message: text })
-                    });
-                    
-                    const data = await response.json();
+                const response = await fetch("/api/chat", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ message: text })
+                });
 
-                    console.log("Ramsey's raw data:", data);
-                    
-                    // 3. Update the UI with Ramsey's actual response
-                    const bubbleToUpdate = document.getElementById(loadingId);
-                    // AFTER (add the updateBuildList call)
-                    if (data.response) {
-                        bubbleToUpdate.innerHTML = marked.parse(data.response);
-                        
-                        if (data.parts) {
-                            updateBuildList(data.parts, data.prices);
-                        }
-                        if (data.upgrades) {
-                            updateUpgradePanel(data.upgrades);
-                        }
-                        if (data.benchmark) {
-                            updateBenchmarkPanel(data.benchmark);
-                        }
-                    } else {
-                        bubbleToUpdate.textContent = "Oops, hit an error: " + data.error;
+                const data = await response.json();
+                console.log("Ramsey's raw data:", data);
+
+                const bubbleToUpdate = document.getElementById(loadingId);
+                if (data.response) {
+                    bubbleToUpdate.innerHTML = marked.parse(data.response);
+
+                    if (data.parts && Object.values(data.parts).some(v => v && v !== "null")) {
+                        updateBuildList(data.parts, data.prices);
                     }
-                } catch (error) {
-                    document.getElementById(loadingId).textContent = "Cannot connect to the AI server. Is app.py running?";
-                    console.error(error);
+                    if (data.upgrades && (data.upgrades.keep || data.upgrades.replace_first)) {
+                        updateUpgradePanel(data.upgrades);
+                    }
+                    if (data.benchmark && data.benchmark.gaming) {
+                        updateBenchmarkPanel(data.benchmark);
+                    }
+
+                    if (data.suggested_phrases && Array.isArray(data.suggested_phrases)) {
+                        showSuggestedPhrases(data.suggested_phrases);
+                    } else {
+                        const hasParts = data.parts && Object.values(data.parts).some(v => v && v !== "null");
+                        const fallbackPhrases = hasParts
+                            ? ["Show me a cheaper alternative", "Make this build quieter", "What can I upgrade first?", "Explain the GPU choice"]
+                            : ["Give me a full build recommendation", "What's the best value option?", "Compare with a higher budget"];
+                        showSuggestedPhrases(fallbackPhrases);
+                    }
+                } else {
+                    bubbleToUpdate.textContent = "Oops, hit an error: " + data.error;
                 }
+            } catch (error) {
+                document.getElementById(loadingId).textContent = "Cannot connect to the AI server. Is app.py running?";
+                console.error(error);
+            }
+        }
+
+        // ── Send button ───────────────────────────────────────────────────────
+        document.querySelector("#sendBtn").addEventListener("click", () => {
+            sendPrompt(promptBox.value.trim());
         });
+
+        // declared here so handleVoiceCommand can reference it
+        const openMicBtn = document.getElementById("openMicBtn");
+        let openMicOn = false; // declared here so handleVoiceCommand can access it
+
+        // ── Voice Command Engine ──────────────────────────────────────────────
+        function handleVoiceCommand(raw) {
+            const t = raw.trim().toLowerCase().replace(/[.,!?]+$/, "");
+
+            // ── 1. Close Mic ─────────────────────────────────────────────────
+            const closeMicPhrases = [
+                "close mic", "close the mic",
+                "mic close", "mic off",
+                "turn the mic off", "turn mic off"
+            ];
+            if (closeMicPhrases.includes(t)) {
+                if (openMicOn) openMicBtn.click();
+                showToast("Mic closed");
+                promptBox.value = "";
+                return true;
+            }
+
+            // ── 2. Tab switches ───────────────────────────────────────────────
+            const tabMap = {
+                // Parts
+                "see part":             "parts",
+                "see parts":            "parts",
+                "see the part":         "parts",
+                "see the parts":        "parts",
+                "view part":            "parts",
+                "view parts":           "parts",
+                "view the part":        "parts",
+                "view the parts":       "parts",
+                // Upgrades
+                "see upgrade":          "upgrade",
+                "see upgrades":         "upgrade",
+                "see the upgrade":      "upgrade",
+                "see the upgrades":     "upgrade",
+                "view upgrade":         "upgrade",
+                "view upgrades":        "upgrade",
+                "view the upgrade":     "upgrade",
+                "view the upgrades":    "upgrade",
+                // Benchmarks
+                "see benchmark":        "bench",
+                "see benchmarks":       "bench",
+                "see the benchmark":    "bench",
+                "see the benchmarks":   "bench",
+                "view benchmark":       "bench",
+                "view benchmarks":      "bench",
+                "view the benchmark":   "bench",
+                "view the benchmarks":  "bench",
+            };
+            if (tabMap[t]) {
+                const targetTab = document.querySelector(`[data-tab="${tabMap[t]}"]`);
+                if (targetTab) targetTab.click();
+                const label = tabMap[t] === "bench" ? "benchmarks" : tabMap[t];
+                showToast(`Switched to ${label} view`);
+                promptBox.value = "";
+                return true;
+            }
+
+            // ── 3. Option [number] — starter chips ────────────────────────────
+            const optionMatch = t.match(/^option\s+(\w+)$/);
+            if (optionMatch) {
+                const wordToNum = { one:1, two:2, three:3, four:4, "1":1, "2":2, "3":3, "4":4 };
+                const n = wordToNum[optionMatch[1]];
+                const chips = document.querySelectorAll("#starterRow .chip");
+                if (n && chips[n - 1]) {
+                    chips[n - 1].click(); // this sets promptBox.value via the chip handler
+                    showToast(`Option ${n} selected`);
+                } else {
+                    showToast("No such option");
+                }
+                // intentionally NOT clearing promptBox here — chip click already filled it
+                return true;
+            }
+
+            // ── 4. Delete prompt ──────────────────────────────────────────────
+            const deletePhrases = [
+                "delete all", "delete prompt", "delete message",
+                "clear all", "clear prompt", "clear message"
+            ];
+            if (deletePhrases.includes(t)) {
+                promptBox.value = "";
+                showToast("Prompt cleared");
+                return true;
+            }
+
+            // ── 5. Copy build ─────────────────────────────────────────────────
+            const copyPhrases = [
+                "copy build", "copy the build",
+                "copy my build", "copy my pc parts"
+            ];
+            if (copyPhrases.includes(t)) {
+                document.getElementById("copyBtn").click();
+                promptBox.value = "";
+                return true;
+            }
+
+            return false; // not a command — treat as normal prompt
+        }
+        const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+
+        // ── Push to Talk ──────────────────────────────────────────────────────
+        const pttBtn = document.getElementById("pttBtn");
+        let pttRecognition = null;
+        let pttHeld = false;        // true while button is physically held
+        let pttAccumulated = "";    // builds up across browser restarts
+
+        if (!SpeechRecognition) {
+            pttBtn.disabled = true;
+            pttBtn.title = "Speech recognition not supported in this browser";
+            document.getElementById("openMicBtn").disabled = true;
+            document.getElementById("openMicBtn").title = "Speech recognition not supported in this browser";
+        } else {
+            function createPTTSession() {
+                const rec = new SpeechRecognition();
+                rec.lang = "en-PH";
+                rec.interimResults = true;
+                rec.maxAlternatives = 1;
+
+                rec.onresult = (e) => {
+                    let sessionFinal = "";
+                    let interim = "";
+                    for (let i = 0; i < e.results.length; i++) {
+                        if (e.results[i].isFinal) sessionFinal += e.results[i][0].transcript + " ";
+                        else interim += e.results[i][0].transcript;
+                    }
+                    // Show everything: past accumulated + this session's final + live interim
+                    promptBox.value = (pttAccumulated + sessionFinal + interim).trim();
+                };
+
+                rec.onerror = (e) => {
+                    if (e.error === "no-speech") return; // browser timed out on silence — just restart
+                    console.warn("PTT error:", e.error);
+                    showToast("Mic error: " + e.error);
+                    pttHeld = false;
+                    pttBtn.classList.remove("is-recording");
+                };
+
+                rec.onend = () => {
+                    // Grab whatever was finalised this session and add to accumulator
+                    const box = promptBox.value.trim();
+                    if (box) pttAccumulated = box + " ";
+
+                    if (pttHeld) {
+                        // Button still held — browser timed out, restart seamlessly
+                        pttRecognition = createPTTSession();
+                        pttRecognition.start();
+                    } else {
+                        // Button released — check for command first, then send
+                        pttBtn.classList.remove("is-recording");
+                        const text = promptBox.value.trim();
+                        pttAccumulated = "";
+                        if (text && !handleVoiceCommand(text)) sendPrompt(text);
+                    }
+                };
+
+                return rec;
+            }
+
+            function startPTT() {
+                if (pttHeld) return;
+                pttHeld = true;
+                pttAccumulated = "";
+                promptBox.value = "";
+                pttBtn.classList.add("is-recording");
+                showToast("Listening… release to send");
+                pttRecognition = createPTTSession();
+                pttRecognition.start();
+            }
+
+            function stopPTT() {
+                if (!pttHeld) return;
+                pttHeld = false;
+                if (pttRecognition) pttRecognition.stop();
+            }
+
+            pttBtn.addEventListener("mousedown",  startPTT);
+            pttBtn.addEventListener("touchstart", (e) => { e.preventDefault(); startPTT(); }, { passive: false });
+            pttBtn.addEventListener("mouseup",    stopPTT);
+            pttBtn.addEventListener("mouseleave", stopPTT);
+            pttBtn.addEventListener("touchend",   stopPTT);
+
+            // ── Open Mic ──────────────────────────────────────────────────────
+            let openMicRecognition = null;
+            let openMicAccumulated = "";
+            let silenceTimer = null;
+
+            function createOpenMicSession() {
+                const rec = new SpeechRecognition();
+                rec.lang = "en-PH";
+                rec.interimResults = true;
+                rec.continuous = true;
+
+                rec.onresult = (e) => {
+                    let sessionFinal = "";
+                    let interim = "";
+                    for (let i = e.resultIndex; i < e.results.length; i++) {
+                        if (e.results[i].isFinal) sessionFinal += e.results[i][0].transcript + " ";
+                        else interim += e.results[i][0].transcript;
+                    }
+
+                    if (sessionFinal) openMicAccumulated += sessionFinal;
+                    promptBox.value = (openMicAccumulated + interim).trim();
+
+                    // Reset silence timer on every new result
+                    clearTimeout(silenceTimer);
+                    if (openMicAccumulated.trim()) {
+                        silenceTimer = setTimeout(() => {
+                            const text = openMicAccumulated.trim();
+                            openMicAccumulated = "";
+                            promptBox.value = "";
+                            if (!handleVoiceCommand(text)) sendPrompt(text);
+                        }, 3000);
+                    }
+                };
+
+                rec.onerror = (e) => {
+                    if (e.error === "no-speech") return;
+                    console.warn("Open Mic error:", e.error);
+                    showToast("Mic error: " + e.error);
+                    openMicOn = false;
+                    openMicBtn.classList.remove("is-open-mic");
+                };
+
+                rec.onend = () => {
+                    if (openMicOn) {
+                        // Restart seamlessly to bypass browser timeout
+                        openMicRecognition = createOpenMicSession();
+                        openMicRecognition.start();
+                    }
+                };
+
+                return rec;
+            }
+
+            openMicBtn.addEventListener("click", () => {
+                if (openMicOn) {
+                    openMicOn = false;
+                    openMicBtn.classList.remove("is-open-mic");
+                    clearTimeout(silenceTimer);
+                    openMicAccumulated = "";
+                    if (openMicRecognition) openMicRecognition.stop();
+                    showToast("Open Mic off");
+                    return;
+                }
+
+                openMicOn = true;
+                openMicAccumulated = "";
+                openMicBtn.classList.add("is-open-mic");
+                showToast("Open Mic on — speak anytime");
+                openMicRecognition = createOpenMicSession();
+                openMicRecognition.start();
+            });
+        }
 
         document.querySelectorAll(".history-card").forEach((card) => {
             card.addEventListener("click", () => {
                 document.querySelectorAll(".history-card").forEach((item) => item.classList.remove("is-active"));
                 card.classList.add("is-active");
-                const phrases = phraseSets[card.dataset.chat] || phraseSets["1440p gaming"];
-                phraseRow.innerHTML = phrases.map((phrase) => `<button class="phrase" data-phrase="${phrase}">${phrase}</button>`).join("");
                 showToast(`${card.querySelector("strong").textContent} loaded`);
             });
         });
@@ -492,15 +784,84 @@
                     section.style.display = 'block';
                 }
             }
-
-            // Auto-switch to benchmark tab to show the user
-            const benchTab = document.querySelector('[data-tab="bench"]');
-            if (benchTab) benchTab.click();
         }
     
       </script>
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <script>
+        // Enable line break rendering so single \n in AI responses become <br>
+        marked.use({ breaks: true });
+    </script>
+    <style>
+        /* Parts list line spacing inside chat bubbles */
+        .bubble p { margin: 0 0 4px 0; }
+        .bubble p + p { margin-top: 2px; }
+        .bubble strong:first-child { display: inline; }
+    </style>
+
+    <style>
+        /* ── Conversation Starters: slide down and collapse on dismiss ── */
+        .starter-row {
+            display: flex;
+            flex-wrap: wrap;
+            gap: var(--space-2);
+            margin-bottom: var(--space-3);
+            max-height: 200px;
+            overflow: hidden;
+            opacity: 1;
+            transition: max-height 0.38s cubic-bezier(0.4, 0, 0.2, 1),
+                        opacity 0.28s ease,
+                        margin-bottom 0.38s ease;
+        }
+        .starter-row.is-dismissed {
+            max-height: 0 !important;
+            opacity: 0;
+            margin-bottom: 0;
+            pointer-events: none;
+        }
+
+        /* ── Suggested Phrases: hidden by default, slide up after AI reply ── */
+        .phrase-row {
+            flex-direction: column;
+            gap: var(--space-2);
+            margin-bottom: var(--space-3);
+            transform: translateY(10px);
+            opacity: 0;
+            transition: transform 0.32s cubic-bezier(0.2, 0, 0, 1),
+                        opacity 0.28s ease;
+        }
+        .phrase-row.is-visible {
+            transform: translateY(0);
+            opacity: 1;
+        }
+
+        /* Full-width phrase button */
+        .phrase-full {
+            display: block;
+            width: 100%;
+            text-align: left;
+            padding: var(--space-3) var(--space-4);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-md);
+            background: var(--surface);
+            color: var(--fg-2);
+            font-size: var(--text-sm);
+            font-family: var(--font-body);
+            cursor: pointer;
+            transition: background 0.15s, border-color 0.15s, color 0.15s;
+            line-height: 1.4;
+        }
+        .phrase-full:hover {
+            border-color: var(--fg);
+            background: color-mix(in oklab, var(--fg), transparent 94%);
+            color: var(--fg);
+        }
+        .phrase-full::before {
+            content: '↩  ';
+            opacity: 0.35;
+            font-size: 0.8em;
+        }
+    </style>
 
 </body>
-
 </html>
