@@ -840,9 +840,96 @@ textarea {
         max-width: 60%;
 }
 
-.price-tag {
+#partsList .spec-row .price-tag {
+    grid-column: 2;
+    grid-row: 2;
+    text-align: right;
     font-size: 0.72rem;
     color: var(--accent, #7c6fff);
-    margin-top: 2px;
     display: block;
+    margin-top: 1px;
+}
+
+/* ── Input row: textarea | send (tall) | PTT+OpenMic stack ── */
+.input-wrap {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto auto;
+    gap: var(--space-2);
+    align-items: stretch;
+}
+
+.voice-btn-group {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2);
+}
+
+.icon-btn {
+    width: 52px;
+    height: 52px;
+    min-height: unset;
+    padding: 0;
+    border-radius: var(--radius-md);
+    display: grid;
+    place-items: center;
+    flex-shrink: 0;
+}
+
+/* Send — tall, fills full textarea height */
+.send-tall {
+    width: 52px;
+    height: 100%;
+    min-height: unset;
+}
+
+#sendBtn {
+    background: var(--accent);
+    border-color: var(--accent);
+    color: var(--accent-on);
+    box-shadow: none;
+}
+#sendBtn:hover {
+    background: var(--accent-hover);
+    border-color: var(--accent-hover);
+}
+
+.btn-voice {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    color: var(--accent);
+    box-shadow: var(--elev-ring);
+    transition: background var(--motion-fast) var(--ease-standard),
+                border-color var(--motion-fast) var(--ease-standard),
+                color var(--motion-fast) var(--ease-standard);
+}
+.btn-voice:hover {
+    border-color: var(--accent);
+    background: color-mix(in oklab, var(--accent), transparent 90%);
+}
+
+.btn-voice.is-recording {
+    background: color-mix(in oklab, var(--danger), transparent 82%);
+    border-color: var(--danger);
+    color: var(--danger);
+    animation: ptt-pulse 1s infinite ease-in-out;
+}
+@keyframes ptt-pulse {
+    0%, 100% { box-shadow: 0 0 0 0   color-mix(in oklab, var(--danger), transparent 60%); }
+    50%       { box-shadow: 0 0 0 6px color-mix(in oklab, var(--danger), transparent 88%); }
+}
+
+.btn-voice.is-open-mic {
+    background: color-mix(in oklab, var(--success), transparent 82%);
+    border-color: var(--success);
+    color: var(--success);
+    animation: open-mic-breathe 2s infinite ease-in-out;
+}
+@keyframes open-mic-breathe {
+    0%, 100% { box-shadow: 0 0 0 0   color-mix(in oklab, var(--success), transparent 60%); }
+    50%       { box-shadow: 0 0 0 5px color-mix(in oklab, var(--success), transparent 88%); }
+}
+
+.icon-btn:disabled {
+    opacity: 0.35;
+    cursor: not-allowed;
 }
