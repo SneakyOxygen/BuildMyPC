@@ -521,7 +521,8 @@
                 rec.onerror = (e) => {
                     if (e.error === "no-speech") return; // browser timed out on silence — just restart
                     console.warn("PTT error:", e.error);
-                    showToast("Mic error: " + e.error);
+                    showToast("Sorry, I didn't hear that.");
+                    //showToast("Mic error: " + e.error);
                     pttHeld = false;
                     pttBtn.classList.remove("is-recording");
                 };
@@ -607,7 +608,8 @@
                 rec.onerror = (e) => {
                     if (e.error === "no-speech") return;
                     console.warn("Open Mic error:", e.error);
-                    showToast("Mic error: " + e.error);
+                    showToast("Sorry, I didn't hear that.");
+                    //showToast("Mic error: " + e.error);
                     openMicOn = false;
                     openMicBtn.classList.remove("is-open-mic");
                 };
