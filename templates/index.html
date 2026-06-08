@@ -198,8 +198,11 @@
             
                 // Clear out the placeholder text
                 historyList.innerHTML = "";
-            
-                builds.forEach((build, index) => {
+                
+                // This clips the array to only keep the top 5 most recent records
+                const restrictedBuilds = builds.slice(0, 5);
+
+                restrictedBuilds.forEach((build, index) => {
                     const card = document.createElement("button");
                     card.className = `history-card ${index === 0 ? 'is-active' : ''}`;
                 
@@ -408,6 +411,43 @@
                 return true;
             }
 
+        // Commands: "previous convo", "prev convo", "previous conversation"
+            if (t === "previous convo" || t === "prev convo" || t === "previous conversation") {
+                const cards = Array.from(document.querySelectorAll("#historyList .history-card"));
+                const activeIndex = cards.findIndex(card => card.classList.contains("is-active"));
+                
+                if (activeIndex > 0) {
+                    cards[activeIndex - 1].click();
+                    showToast("Switched to previous conversation");
+                } else {
+                    showToast("No previous conversation available");
+                }
+                promptBox.value = "";
+                return true;
+            }
+        
+            // Commands: "new convo", "new conversation", "start new chat"
+            if (t === "new convo" || t === "new conversation" || t === "new chat") {
+                // Clear active states on sidebar cards
+                document.querySelectorAll("#historyList .history-card").forEach(item => item.classList.remove("is-active"));
+                
+                // Reset the main chat log window layout back to welcoming default state
+                document.querySelector("#messages").innerHTML = "";
+                document.querySelector("#chat-title").textContent = "Welcome! How can I assist you?";
+                
+                // Restore suggested prompt starter row visibility if it was hidden
+                const starterRow = document.getElementById('starterRow');
+                if (starterRow) {
+                    starterRow.style.display = 'flex';
+                    starterRow.classList.remove('is-dismissed');
+                    starterDismissed = false; 
+                }
+                
+                showToast("Started a new conversation");
+                promptBox.value = "";
+                return true;
+            }
+            
             // ── 2. Tab switches ───────────────────────────────────────────────
             const tabMap = {
                 // Parts
