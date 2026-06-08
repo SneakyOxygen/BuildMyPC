@@ -442,6 +442,7 @@
             }
         
             // Commands: "new convo", "new conversation", "start new chat"
+            // Commands: "exit convo", "exit conversation", "exit chat"
             if (t === "new convo" || t === "new conversation" || t === "new chat" || 
                 t === "exit convo" || t === "exit conversation" || t === "exit chat") {
                 // Clear active states on sidebar cards
@@ -457,6 +458,13 @@
                     starterRow.style.display = 'flex';
                     starterRow.classList.remove('is-dismissed');
                     starterDismissed = false; 
+                }
+
+                const phraseRow = document.getElementById('phraseRow');
+                if (phraseRow) {
+                    phraseRow.innerHTML = "";             // Wipes out old buttons
+                    phraseRow.style.display = 'none';     // Hides the row container
+                    phraseRow.classList.remove('is-visible'); // Resets the slide animation state
                 }
                 
                 showToast("Started a new conversation");
