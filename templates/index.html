@@ -425,9 +425,25 @@
                 promptBox.value = "";
                 return true;
             }
+
+            // Commands: "next convo", "next conversation"
+            if (t === "next convo" || t === "next conversation") {
+                const cards = Array.from(document.querySelectorAll("#historyList .history-card"));
+                const activeIndex = cards.findIndex(card => card.classList.contains("is-active"));
+
+                if (activeIndex !== -1 && activeIndex < cards.length - 1) {
+                    cards[activeIndex + 1].click();
+                    showToast("Switched to next conversation");
+                } else {
+                    showToast("No next conversation available");
+                }
+                promptBox.value = "";
+                return true;
+            }
         
             // Commands: "new convo", "new conversation", "start new chat"
-            if (t === "new convo" || t === "new conversation" || t === "new chat") {
+            if (t === "new convo" || t === "new conversation" || t === "new chat" || 
+                t === "exit convo" || t === "exit conversation" || t === "exit chat") {
                 // Clear active states on sidebar cards
                 document.querySelectorAll("#historyList .history-card").forEach(item => item.classList.remove("is-active"));
                 
@@ -447,7 +463,7 @@
                 promptBox.value = "";
                 return true;
             }
-            
+
             // ── 2. Tab switches ───────────────────────────────────────────────
             const tabMap = {
                 // Parts
