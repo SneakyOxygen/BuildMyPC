@@ -204,7 +204,7 @@
 
                 restrictedBuilds.forEach((build, index) => {
                     const card = document.createElement("button");
-                    card.className = `history-card ${index === 0 ? 'is-active' : ''}`;
+                    card.className = "history-card";
                 
                     const buildDate = new Date(build.created_at).toLocaleDateString(undefined, {
                         month: 'short',
